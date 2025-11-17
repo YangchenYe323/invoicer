@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import {
   Mail,
   FileText,
@@ -10,8 +10,17 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { getSessionFn } from '@/lib/auth-server'
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute('/')({
+  component: App,
+  beforeLoad: async (_ctx) => {
+    const session = await getSessionFn()
+    if (session?.user) {
+      throw redirect({ to: '/dashboard/', replace: true })
+    }
+  },
+})
 
 function App() {
   const features = [

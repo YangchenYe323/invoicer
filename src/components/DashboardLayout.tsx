@@ -4,10 +4,26 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { authClient } from '@/lib/auth-client'
 import { useRouter } from '@tanstack/react-router'
-import type { Session } from 'better-auth'
+import { createServerFn } from '@tanstack/react-start'
+
+const generateGoogleOAuthURL = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    console.log(process.env.GOOGLE_OAUTH2_CLIENT_ID)
+    console.log(process.env.GOOGLE_OAUTH2_REDIRECT_URI)
+
+    const url = new URL('https://accounts.google.com/o/oauth2/auth')
+    url.searchParams.set('client_id', process.env.GOOGLE_OAUTH2_CLIENT_ID!)
+    url.searchParams.set('redirect_uri', process.env.GOOGLE_OAUTH2_REDIRECT_URI!)
+    url.searchParams.set('response_type', 'code')
+    url.searchParams.set('scope', 'openid email')
+    url.searchParams.set('access_type', 'offline')
+    url.searchParams.set('prompt', 'consent')
+    return url.toString()
+  },
+)
 
 interface DashboardLayoutProps {
-  session: any
+  session: any 
 }
 
 // Fake invoice data
@@ -73,24 +89,10 @@ export default function DashboardLayout({ session }: DashboardLayoutProps) {
     router.navigate({ to: '/' })
   }
 
-  const handleAddGmailSource = () => {
+  const handleAddGmailSource = async () => {
     setIsAddingSource(true)
-    // Build OAuth URL
-    const clientId = import.meta.env.VITE_GOOGLE_OAUTH2_CLIENT_ID || process.env.GOOGLE_OAUTH2_CLIENT_ID
-    const redirectUri = `${window.location.origin}/dashboard/oauth/callback`
-    const scope = 'https://mail.google.com/'
-
-    const params = new URLSearchParams({
-      client_id: clientId || '',
-      redirect_uri: redirectUri,
-      scope: scope,
-      response_type: 'code',
-      access_type: 'offline',
-      prompt: 'consent',
-    })
-
-    const authUrl = `https://accounts.google.com/o/oauth2/auth?${params.toString()}`
-    window.location.href = authUrl
+    const url = await generateGoogleOAuthURL()
+    window.location.href = url
   }
 
   const getStatusColor = (status: string) => {

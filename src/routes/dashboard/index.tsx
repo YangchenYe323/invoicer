@@ -3,7 +3,7 @@ import { getSessionFn } from '@/lib/auth-server'
 import DashboardLayout from '@/components/DashboardLayout'
 
 export const Route = createFileRoute('/dashboard/')({
-  beforeLoad: async (ctx) => {
+  beforeLoad: async (_ctx) => {
     const session = await getSessionFn()
     console.log(session)
     if (session?.user) {

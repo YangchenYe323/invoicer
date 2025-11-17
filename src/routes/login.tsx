@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Receipt, Mail, Lock, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -6,8 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { authClient } from '@/lib/auth-client'
+import { getSessionFn } from '@/lib/auth-server'
 
 export const Route = createFileRoute('/login')({
+  beforeLoad: async (_ctx) => {
+    const session = await getSessionFn()
+    if (session?.user) {
+      throw redirect({ to: '/dashboard/', replace: true })
+    }
+  },
   component: LoginPage,
 })
 
