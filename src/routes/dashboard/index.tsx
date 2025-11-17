@@ -5,7 +5,6 @@ import DashboardLayout from '@/components/DashboardLayout'
 export const Route = createFileRoute('/dashboard/')({
   beforeLoad: async (_ctx) => {
     const session = await getSessionFn()
-    console.log(session)
     if (session?.user) {
       return { session }
     }

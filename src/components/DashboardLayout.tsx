@@ -1,10 +1,14 @@
-import { useState } from 'react'
-import { Receipt, LogOut, Mail, Plus, FileText, DollarSign, Calendar } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Receipt, LogOut, Mail, Plus, FileText, DollarSign, Calendar, Check, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { authClient } from '@/lib/auth-client'
 import { useRouter } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
+import { db } from '@/db/db'
+import { source } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { getSessionFn } from '@/lib/auth-server'
 
 const generateGoogleOAuthURL = createServerFn({ method: 'GET' }).handler(
   async () => {
@@ -19,6 +23,43 @@ const generateGoogleOAuthURL = createServerFn({ method: 'GET' }).handler(
     url.searchParams.set('access_type', 'offline')
     url.searchParams.set('prompt', 'consent')
     return url.toString()
+  },
+)
+
+const getUserSources = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const session = await getSessionFn()
+    if (!session?.user?.id) {
+      throw new Error('Unauthorized')
+    }
+
+    const sources = await db
+      .select({
+        id: source.id,
+        name: source.name,
+        emailAddress: source.emailAddress,
+        sourceType: source.sourceType,
+        createdAt: source.createdAt,
+      })
+      .from(source)
+      .where(eq(source.userId, session.user.id))
+
+    return sources
+  },
+)
+
+const deleteSource = createServerFn({ method: 'POST' }).handler(
+  async (sourceId: number) => {
+    const session = await getSessionFn()
+    if (!session?.user?.id) {
+      throw new Error('Unauthorized')
+    }
+
+    await db
+      .delete(source)
+      .where(eq(source.id, sourceId))
+
+    return { success: true }
   },
 )
 
@@ -83,6 +124,28 @@ export default function DashboardLayout({ session }: DashboardLayoutProps) {
   const router = useRouter()
   const [invoices] = useState(fakeInvoices)
   const [isAddingSource, setIsAddingSource] = useState(false)
+  const [sources, setSources] = useState<Array<{
+    id: number
+    name: string
+    emailAddress: string
+    sourceType: string
+    createdAt: Date
+  }>>([])
+  const [isLoadingSources, setIsLoadingSources] = useState(true)
+
+  useEffect(() => {
+    const loadSources = async () => {
+      try {
+        const data = await getUserSources()
+        setSources(data)
+      } catch (error) {
+        console.error('Failed to load sources:', error)
+      } finally {
+        setIsLoadingSources(false)
+      }
+    }
+    loadSources()
+  }, [])
 
   const handleLogout = async () => {
     await authClient.signOut()
@@ -93,6 +156,19 @@ export default function DashboardLayout({ session }: DashboardLayoutProps) {
     setIsAddingSource(true)
     const url = await generateGoogleOAuthURL()
     window.location.href = url
+  }
+
+  const handleDeleteSource = async (sourceId: number) => {
+    if (!confirm('Are you sure you want to delete this source?')) {
+      return
+    }
+    try {
+      await deleteSource(sourceId)
+      setSources(sources.filter(s => s.id !== sourceId))
+    } catch (error) {
+      console.error('Failed to delete source:', error)
+      alert('Failed to delete source')
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -176,7 +252,7 @@ export default function DashboardLayout({ session }: DashboardLayoutProps) {
           </Card>
         </div>
 
-        {/* Add Source Section */}
+        {/* Email Sources Section */}
         <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700 mb-8">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -187,11 +263,68 @@ export default function DashboardLayout({ session }: DashboardLayoutProps) {
               Connect your email accounts to automatically import invoices
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* Loading State */}
+            {isLoadingSources && (
+              <div className="text-center py-4 text-gray-400">
+                Loading sources...
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoadingSources && sources.length === 0 && (
+              <div className="text-center py-6 text-gray-400">
+                <Mail className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+                <p className="mb-4">No email sources connected yet</p>
+              </div>
+            )}
+
+            {/* Existing Sources */}
+            {!isLoadingSources && sources.length > 0 && (
+              <div className="space-y-3 mb-4">
+                <p className="text-sm font-medium text-gray-300">Connected Accounts</p>
+                {sources.map((src) => (
+                  <div
+                    key={src.id}
+                    className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 flex items-center justify-between hover:border-blue-500/50 transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-500/10 p-2 rounded-lg">
+                        <Mail className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">{src.emailAddress}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                          <span className="capitalize">{src.sourceType}</span>
+                          <span>•</span>
+                          <span>Added {new Date(src.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
+                        <Check className="w-3 h-3 text-green-400" />
+                        <span className="text-xs text-green-400 font-medium">Active</span>
+                      </div>
+                      <Button
+                        onClick={() => handleDeleteSource(src.id)}
+                        variant="outline"
+                        size="sm"
+                        className="bg-slate-800 border-slate-700 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Source Button */}
             <Button
               onClick={handleAddGmailSource}
               disabled={isAddingSource}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white w-full"
             >
               <Plus className="w-4 h-4 mr-2" />
               {isAddingSource ? 'Connecting...' : 'Add Gmail Account'}
