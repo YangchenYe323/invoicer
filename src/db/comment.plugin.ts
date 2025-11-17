@@ -2,7 +2,7 @@
  * This plugin adds comments to the database tables f
  */
 
-import { getTableColumns, getTableName, sql, Table } from "drizzle-orm";
+import { getTableColumns, getTableName, Table } from "drizzle-orm";
 import { db } from "./db.ts";
 
 type ColumnComments<T extends Table> = {

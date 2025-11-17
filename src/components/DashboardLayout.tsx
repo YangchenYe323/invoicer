@@ -9,6 +9,7 @@ import { db } from '@/db/db'
 import { source } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSessionFn } from '@/lib/auth-server'
+import { z } from 'zod'
 
 const generateGoogleOAuthURL = createServerFn({ method: 'GET' }).handler(
   async () => {
@@ -48,8 +49,11 @@ const getUserSources = createServerFn({ method: 'GET' }).handler(
   },
 )
 
-const deleteSource = createServerFn({ method: 'POST' }).handler(
-  async (sourceId: number) => {
+const deleteSource = createServerFn({ method: 'POST' })
+  .inputValidator((sourceId: number) => z.number().parse(sourceId))
+  .handler(
+  async (ctx) => {
+    const sourceId = ctx.data
     const session = await getSessionFn()
     if (!session?.user?.id) {
       throw new Error('Unauthorized')
@@ -163,7 +167,7 @@ export default function DashboardLayout({ session }: DashboardLayoutProps) {
       return
     }
     try {
-      await deleteSource(sourceId)
+      await deleteSource({ data: sourceId })
       setSources(sources.filter(s => s.id !== sourceId))
     } catch (error) {
       console.error('Failed to delete source:', error)
