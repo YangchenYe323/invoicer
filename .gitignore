@@ -12,3 +12,5 @@ count.txt
 .vinxi
 todos.json
 .vercel
+
+src/routeTree.gen.ts

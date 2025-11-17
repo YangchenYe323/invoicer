@@ -16,6 +16,9 @@ const config = defineConfig({
     nitro(),
     viteReact(),
   ],
+  define: {
+    'import.meta.env.VITE_GOOGLE_OAUTH2_CLIENT_ID': JSON.stringify(process.env.GOOGLE_OAUTH2_CLIENT_ID),
+  },
 });
 
 export default config;
