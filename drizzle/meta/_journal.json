@@ -22,6 +22,27 @@
       "when": 1763319743369,
       "tag": "0002_glossy_layla_miller",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1763831576661,
+      "tag": "0003_noisy_madripoor",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1763845408443,
+      "tag": "0004_neat_zombie",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1763846043664,
+      "tag": "0005_amused_sunspot",
+      "breakpoints": true
     }
   ]
 }
