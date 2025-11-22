@@ -174,6 +174,8 @@ export const invoice = pgTable("invoice", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity().notNull(),
 	// The source ID of the source that contains the invoice
 	sourceId: integer("source_id"),
+	// IMAP UID of the email that contains the invoice.
+	uid: integer("uid"),
 	// IMAP message ID of the email that contains the invoice
 	messageId: text("message_id"),
 	// The invoice or receipt number
@@ -214,6 +216,7 @@ export const invoice = pgTable("invoice", {
 pgComments(invoice, {
 	id: "Auto-incrementing integer primary key",
 	sourceId: "The source ID of the source that contains the invoice, foreign key to the source table",
+	uid: "The IMAP UID of the email that contains the invoice, stored as an integer",
 	messageId: "The IMAP message ID of the email that contains the invoice, stored as a string",
 	invoiceNumber: "The invoice or receipt number, stored as a string",
 	vendorName: "The vendor name, stored as a string",
@@ -222,6 +225,7 @@ pgComments(invoice, {
 	currency: "The currency, stored as a string",
 	paymentStatus: "The payment status, stored as a string, e.g., paid, unpaid, pending, etc.",
 	lineItems: "The line items, stored as a JSON array of LineItem objects, each containing a description, quantity, and unit price",
+	attachedFiles: "The attached files in the invoice, stored as a JSON array of AttachedFile objects, each containing a file name and S3 object key",
 	createdAt: "The date and time the invoice was created, automatically set to the current timestamp",
 	updatedAt: "The date and time the invoice was last updated, automatically set to the current timestamp",
 	userId: "The user ID of the user who owns the invoice, foreign key to the user table",
