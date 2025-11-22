@@ -159,6 +159,13 @@ export type LineItem = {
 	unitPrice?: number;
 }
 
+export type AttachedFile = {
+	// The name of the file
+	fileName: string;
+	// The S3 object key of the file
+	fileKey: string;
+}
+
 /**
  * An invoice is a single invoice found in a source.
  */
@@ -183,6 +190,8 @@ export const invoice = pgTable("invoice", {
 	paymentStatus: text("payment_status"),
 	// Line Items included in the invoice
 	lineItems: jsonb("line_items").$type<LineItem[]>(),
+	// Attached files in the invoice
+	attachedFiles: jsonb("attached_files").$type<AttachedFile[]>(),
 	// The date and time the invoice was created
 	createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).defaultNow().notNull(),
 	// The date and time the invoice was last updated

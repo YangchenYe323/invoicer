@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { user, account, session, invoice, source, sourceFolder } from "./schema";
+import { user, account, session, source, invoice, sourceFolder } from "./schema";
 
 export const accountRelations = relations(account, ({one}) => ({
 	user: one(user, {
@@ -11,8 +11,8 @@ export const accountRelations = relations(account, ({one}) => ({
 export const userRelations = relations(user, ({many}) => ({
 	accounts: many(account),
 	sessions: many(session),
-	invoices: many(invoice),
 	sources: many(source),
+	invoices: many(invoice),
 }));
 
 export const sessionRelations = relations(session, ({one}) => ({
@@ -20,6 +20,15 @@ export const sessionRelations = relations(session, ({one}) => ({
 		fields: [session.userId],
 		references: [user.id]
 	}),
+}));
+
+export const sourceRelations = relations(source, ({one, many}) => ({
+	user: one(user, {
+		fields: [source.userId],
+		references: [user.id]
+	}),
+	invoices: many(invoice),
+	sourceFolders: many(sourceFolder),
 }));
 
 export const invoiceRelations = relations(invoice, ({one}) => ({
@@ -31,15 +40,6 @@ export const invoiceRelations = relations(invoice, ({one}) => ({
 		fields: [invoice.sourceId],
 		references: [source.id]
 	}),
-}));
-
-export const sourceRelations = relations(source, ({one, many}) => ({
-	invoices: many(invoice),
-	user: one(user, {
-		fields: [source.userId],
-		references: [user.id]
-	}),
-	sourceFolders: many(sourceFolder),
 }));
 
 export const sourceFolderRelations = relations(sourceFolder, ({one}) => ({
