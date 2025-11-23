@@ -174,6 +174,8 @@ export const invoice = pgTable("invoice", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity().notNull(),
 	// The source ID of the source that contains the invoice
 	sourceId: integer("source_id"),
+	// The ID of the source folder that contains the invoice
+	sourceFolderId: integer("source_folder_id"),
 	// IMAP UID of the email that contains the invoice.
 	uid: integer("uid"),
 	// IMAP message ID of the email that contains the invoice
@@ -211,11 +213,18 @@ export const invoice = pgTable("invoice", {
 		foreignColumns: [source.id],
 		name: "invoice_source_id_source_id_fk"
 	}).onDelete("set null"), // When deleted, we don't want to delete all the invoices.
+	foreignKey({
+		columns: [table.sourceFolderId],
+		foreignColumns: [sourceFolder.id],
+		name: "invoice_source_folder_id_source_folder_id_fk"
+	}).onDelete("set null"), // When deleted, we don't want to delete all the invoices.
+	unique("invoice_number_unique").on(table.invoiceNumber),
 ]);
 
 pgComments(invoice, {
 	id: "Auto-incrementing integer primary key",
 	sourceId: "The source ID of the source that contains the invoice, foreign key to the source table",
+	sourceFolderId: "The source folder ID of the source folder that contains the invoice, foreign key to the source folder table",
 	uid: "The IMAP UID of the email that contains the invoice, stored as an integer",
 	messageId: "The IMAP message ID of the email that contains the invoice, stored as a string",
 	invoiceNumber: "The invoice or receipt number, stored as a string",

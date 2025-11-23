@@ -43,6 +43,13 @@
       "when": 1763846043664,
       "tag": "0005_amused_sunspot",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1763865901607,
+      "tag": "0006_chubby_wolf_cub",
+      "breakpoints": true
     }
   ]
 }
