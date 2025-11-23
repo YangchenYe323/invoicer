@@ -66,9 +66,9 @@ const deleteSource = createServerFn({ method: 'POST' })
   )
 
 const getUserInvoices = createServerFn({ method: 'GET' })
-  .inputValidator((input: { cursor?: { id: number; dueDate: Date } | null; limit?: number }) => {
+  .inputValidator((input: { cursor?: { id: number; dueDate: Date | null } | null; limit?: number }) => {
     return z.object({
-      cursor: z.object({ id: z.number(), dueDate: z.date() }).nullable().optional(),
+      cursor: z.object({ id: z.number(), dueDate: z.date().nullable() }).nullable().optional(),
       limit: z.number().optional(),
     }).parse(input)
   })
@@ -83,18 +83,34 @@ const getUserInvoices = createServerFn({ method: 'GET' })
     const whereConditions = [eq(invoice.userId, session.user.id)]
 
     if (cursor) {
-      // For keyset pagination: WHERE (dueDate < cursor.dueDate) OR (dueDate = cursor.dueDate AND id < cursor.id)
-      // This ensures we get the next page of results after the cursor
-      // Put null values of dueDate to the end of the list
-      whereConditions.push(
-        or(
-          lt(invoice.dueDate, cursor.dueDate),
+      // For keyset pagination with DESC NULLS LAST:
+      // - Non-null values come first (in descending order)
+      // - NULL values come last
+
+      if (cursor.dueDate === null) {
+        // We're in the null section, only get nulls with id < cursor.id
+        whereConditions.push(
           and(
-            eq(invoice.dueDate, cursor.dueDate),
+            sql`${invoice.dueDate} IS NULL`,
             lt(invoice.id, cursor.id)
-          )
-        )!
-      )
+          )!
+        )
+      } else {
+        // We're in the non-null section, get:
+        // 1. Items with dueDate < cursor.dueDate (earlier dates)
+        // 2. Items with dueDate = cursor.dueDate AND id < cursor.id (same date, earlier ID)
+        // 3. Items with null dueDate (these come after all non-null dates)
+        whereConditions.push(
+          or(
+            sql`${invoice.dueDate} IS NULL`,
+            lt(invoice.dueDate, cursor.dueDate),
+            and(
+              eq(invoice.dueDate, cursor.dueDate),
+              lt(invoice.id, cursor.id)
+            )
+          )!
+        )
+      }
     }
 
     const invoices = await db
@@ -112,13 +128,13 @@ const getUserInvoices = createServerFn({ method: 'GET' })
       .from(invoice)
       .where(and(...whereConditions))
       // Put null values of dueDate to the end of the list
-      .orderBy(sql`${invoice.dueDate} desc nulls last`)
+      .orderBy(sql`${invoice.dueDate} DESC NULLS LAST`, desc(invoice.id))
       .limit(limit + 1) // Fetch one extra to determine if there are more pages
 
     const hasNextPage = invoices.length > limit
     const items = hasNextPage ? invoices.slice(0, limit) : invoices
     const nextCursor = hasNextPage && items.length > 0
-      ? { id: items[items.length - 1].id, createdAt: items[items.length - 1].createdAt }
+      ? { id: items[items.length - 1].id, dueDate: items[items.length - 1].dueDate }
       : null
 
     return {
@@ -163,8 +179,8 @@ export default function DashboardLayout({ session }: DashboardLayoutProps) {
     isLoading: isLoadingInvoices,
   } = useInfiniteQuery({
     queryKey: ['invoices'],
-    queryFn: ({ pageParam }) => getUserInvoices({ data: { cursor: pageParam, limit: 10 } }),
-    initialPageParam: null as { id: number; createdAt: Date } | null,
+    queryFn: ({ pageParam }) => getUserInvoices({ data: { cursor: pageParam ?? null, limit: 10 } }),
+    initialPageParam: null as { id: number; dueDate: Date | null } | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   })
 
