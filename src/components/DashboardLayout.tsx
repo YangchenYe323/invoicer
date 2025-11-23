@@ -7,7 +7,7 @@ import { useRouter } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '@/db/db'
 import { source, invoice } from '@/db/schema'
-import { eq, desc, and, lt, or } from 'drizzle-orm'
+import { eq, desc, and, lt, or, sql } from 'drizzle-orm'
 import { getSessionFn } from '@/lib/auth-server'
 import { z } from 'zod'
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -50,25 +50,25 @@ const getUserSources = createServerFn({ method: 'GET' }).handler(
 const deleteSource = createServerFn({ method: 'POST' })
   .inputValidator((sourceId: number) => z.number().parse(sourceId))
   .handler(
-  async (ctx) => {
-    const sourceId = ctx.data
-    const session = await getSessionFn()
-    if (!session?.user?.id) {
-      throw new Error('Unauthorized')
-    }
+    async (ctx) => {
+      const sourceId = ctx.data
+      const session = await getSessionFn()
+      if (!session?.user?.id) {
+        throw new Error('Unauthorized')
+      }
 
-    await db
-      .delete(source)
-      .where(eq(source.id, sourceId))
+      await db
+        .delete(source)
+        .where(eq(source.id, sourceId))
 
-    return { success: true }
-  },
-)
+      return { success: true }
+    },
+  )
 
 const getUserInvoices = createServerFn({ method: 'GET' })
-  .inputValidator((input: { cursor?: { id: number; createdAt: Date } | null; limit?: number }) => {
+  .inputValidator((input: { cursor?: { id: number; dueDate: Date } | null; limit?: number }) => {
     return z.object({
-      cursor: z.object({ id: z.number(), createdAt: z.date() }).nullable().optional(),
+      cursor: z.object({ id: z.number(), dueDate: z.date() }).nullable().optional(),
       limit: z.number().optional(),
     }).parse(input)
   })
@@ -83,13 +83,14 @@ const getUserInvoices = createServerFn({ method: 'GET' })
     const whereConditions = [eq(invoice.userId, session.user.id)]
 
     if (cursor) {
-      // For keyset pagination: WHERE (createdAt < cursor.createdAt) OR (createdAt = cursor.createdAt AND id < cursor.id)
+      // For keyset pagination: WHERE (dueDate < cursor.dueDate) OR (dueDate = cursor.dueDate AND id < cursor.id)
       // This ensures we get the next page of results after the cursor
+      // Put null values of dueDate to the end of the list
       whereConditions.push(
         or(
-          lt(invoice.createdAt, cursor.createdAt),
+          lt(invoice.dueDate, cursor.dueDate),
           and(
-            eq(invoice.createdAt, cursor.createdAt),
+            eq(invoice.dueDate, cursor.dueDate),
             lt(invoice.id, cursor.id)
           )
         )!
@@ -110,7 +111,8 @@ const getUserInvoices = createServerFn({ method: 'GET' })
       })
       .from(invoice)
       .where(and(...whereConditions))
-      .orderBy(desc(invoice.createdAt), desc(invoice.id))
+      // Put null values of dueDate to the end of the list
+      .orderBy(sql`${invoice.dueDate} desc nulls last`)
       .limit(limit + 1) // Fetch one extra to determine if there are more pages
 
     const hasNextPage = invoices.length > limit
