@@ -63,31 +63,39 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md">
-        <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 flex items-center justify-center px-6 py-12 relative overflow-hidden">
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-20 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-md relative">
+        <Link to="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-cyan-300 mb-8 transition-all duration-300">
           <ArrowLeft className="w-4 h-4" />
           Back to home
         </Link>
 
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <Receipt className="w-12 h-12 text-blue-400" />
-            <h1 className="text-4xl font-black text-white">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-teal-400 rounded-lg blur-lg opacity-50" />
+              <Receipt className="w-12 h-12 text-cyan-400 relative" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
               Invoicer
             </h1>
           </div>
-          <p className="text-gray-400">
+          <p className="text-slate-400">
             {isLogin ? 'Welcome back' : 'Create your account'}
           </p>
         </div>
 
-        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+        <Card className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md border-cyan-900/30 shadow-xl shadow-cyan-900/10">
           <CardHeader>
-            <CardTitle className="text-white">
+            <CardTitle className="text-cyan-100">
               {isLogin ? 'Sign In' : 'Sign Up'}
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-slate-400">
               {isLogin
                 ? 'Enter your credentials to access your account'
                 : 'Enter your details to create a new account'}
@@ -97,7 +105,7 @@ function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-gray-300">Name</Label>
+                  <Label htmlFor="name" className="text-cyan-200">Name</Label>
                   <Input
                     id="name"
                     type="text"
@@ -105,14 +113,14 @@ function LoginPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required={!isLogin}
-                    className="bg-slate-900/50 border-slate-600 text-white placeholder:text-gray-500"
+                    className="bg-slate-900/50 border-cyan-900/50 text-cyan-100 placeholder:text-slate-500 focus:border-cyan-700/50 transition-colors"
                   />
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-300">
-                  <Mail className="w-4 h-4 inline mr-2" />
+                <Label htmlFor="email" className="text-cyan-200 flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
                   Email
                 </Label>
                 <Input
@@ -122,13 +130,13 @@ function LoginPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
-                  className="bg-slate-900/50 border-slate-600 text-white placeholder:text-gray-500"
+                  className="bg-slate-900/50 border-cyan-900/50 text-cyan-100 placeholder:text-slate-500 focus:border-cyan-700/50 transition-colors"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-300">
-                  <Lock className="w-4 h-4 inline mr-2" />
+                <Label htmlFor="password" className="text-cyan-200 flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
                   Password
                 </Label>
                 <Input
@@ -138,19 +146,19 @@ function LoginPage() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
-                  className="bg-slate-900/50 border-slate-600 text-white placeholder:text-gray-500"
+                  className="bg-slate-900/50 border-cyan-900/50 text-cyan-100 placeholder:text-slate-500 focus:border-cyan-700/50 transition-colors"
                 />
               </div>
 
               {error && (
-                <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-2 rounded-lg text-sm">
+                <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 px-4 py-2 rounded-lg text-sm">
                   {error}
                 </div>
               )}
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white shadow-lg shadow-cyan-900/30 transition-all duration-300"
                 disabled={isLoading}
               >
                 {isLoading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
@@ -163,10 +171,10 @@ function LoginPage() {
                   setIsLogin(!isLogin)
                   setError(null)
                 }}
-                className="text-sm text-gray-400 hover:text-white transition-colors"
+                className="text-sm text-slate-400 hover:text-cyan-300 transition-colors"
               >
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
-                <span className="text-blue-400 hover:text-blue-300">
+                <span className="text-cyan-400 hover:text-cyan-300 font-medium">
                   {isLogin ? 'Sign Up' : 'Sign In'}
                 </span>
               </button>
